@@ -1,0 +1,10 @@
+Flask==0.10.1
+Flask-Testing==0.4.2
+Flask-Babel==0.9
+simplejson
+Flask-SQLAlchemy==1.0
+Flask-Login==0.2.6
+Flask-HTTPAuth
+Flask-Actions
+passlib
+itsdangerous

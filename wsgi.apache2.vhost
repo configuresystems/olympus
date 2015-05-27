@@ -1,0 +1,17 @@
+<VirtualHost *:80>
+    WSGIDaemonProcess app user=ivr group=ivr threads=5
+    WSGIScriptAlias / /home/ivr/application/app.wsgi
+
+    <Directory /home/ivr/application>
+        WSGIProcessGroup app
+        WSGIApplicationGroup %{GLOBAL}
+        #Order deny,allow
+        Require all granted
+        #Allow from all
+        Options All
+        AllowOverride All
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
