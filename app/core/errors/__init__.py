@@ -1,4 +1,4 @@
-from app.core import logger, exceptions
+from app.core import logger
 from os.path import join
 from flask import send_from_directory, jsonify
 from app import app, auth
