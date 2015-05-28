@@ -1,7 +1,8 @@
 from app import app, auth
 from app.core.auth.models import User
-from flask import g, jsonify, abort, url_for, request
+from flask import Blueprint, g, jsonify, abort, url_for, request
 
+module = Blueprint('auth', __name__)
 
 @auth.verify_password
 def verify_password(username_or_token, password):
@@ -13,7 +14,7 @@ def verify_password(username_or_token, password):
     g.user = user
     return True
 
-@app.route('/api/users', methods=['POST'])
+@module.route('/', methods=['POST'])
 def new_user():
     username = request.json.get('username')
     password = request.json.get('password')
@@ -24,18 +25,22 @@ def new_user():
     user = User(username=username)
     user.hash_password(password)
     user.save()
+    g.user = user
     return (jsonify({'username': user.username}), 201,
-            {'Location': url_for('get_user', id=user.id, _external=True)})
+            {'Location': url_for('auth.get_user', id=user.id, _external=True)})
 
-@app.route('/api/users/<int:id>')
+@module.route('/<int:id>')
+@auth.login_required
 def get_user(id):
     user = User.get_by_id(id)
     if not user:
         abort(400)
     return jsonify({'username': user.username})
 
-@app.route('/api/token')
+@module.route('/token')
 @auth.login_required
 def get_auth_token():
     token = g.user.generate_auth_token(600)
     return jsonify({'token': token.decode('ascii'), 'duration': 600})
+
+app.register_blueprint(module, url_prefix='/users')

@@ -19,7 +19,7 @@ class AuthTests(BaseTestCase):
 
         with self.client:
             response = self.client.post(
-                    url_for('new_user'),
+                    url_for('auth.new_user'),
                     data=json.dumps(
                         {"username": "testing",
                          "password": "testing"
@@ -31,7 +31,7 @@ class AuthTests(BaseTestCase):
 
         with self.client:
             response = self.client.post(
-                    url_for('new_user'),
+                    url_for('auth.new_user'),
                     data=json.dumps(
                         {"username": "testing",
                          "password": "testing"
@@ -39,7 +39,7 @@ class AuthTests(BaseTestCase):
             self.assertEqual('testing', response.json.get('username'))
 
             response = self.client.get(
-                    url_for('get_auth_token'),
+                    url_for('auth.get_auth_token'),
                     headers={"Authorization": 'Basic ' + \
                             base64.b64encode("testing:testing")},
                     content_type='application/json')
@@ -49,7 +49,7 @@ class AuthTests(BaseTestCase):
 
         with self.client:
             response = self.client.post(
-                    url_for('new_user'),
+                    url_for('auth.new_user'),
                     data=json.dumps(
                         {"username": "testing",
                          "password": "testing"
@@ -57,7 +57,7 @@ class AuthTests(BaseTestCase):
             self.assertEqual('testing', response.json.get('username'))
 
             response = self.client.get(
-                    url_for('get_auth_token'),
+                    url_for('auth.get_auth_token'),
                     headers={"Authorization": 'Basic ' + \
                             base64.b64encode("testing:iwillfail")},
                     content_type='application/json')
