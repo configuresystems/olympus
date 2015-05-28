@@ -12,7 +12,7 @@ class AuthTests(BaseTestCase):
         user = User(username='testing')
         user.hash_password('testing')
         user.save()
-        user = User.get_by_id(1)
+        user = User.get(1)
         self.assertEqual('testing', user.username)
 
     def test_user_can_create(self):
@@ -46,6 +46,25 @@ class AuthTests(BaseTestCase):
             self.assert200(response)
 
     def test_user_can_generate_token(self):
+
+        with self.client:
+            response = self.client.post(
+                    url_for('auth.new_user'),
+                    data=json.dumps(
+                        {"username": "testing",
+                         "password": "testing"
+                         }), content_type='application/json')
+            self.assertEqual('testing', response.json.get('username'))
+
+            response = self.client.get(
+                    url_for('auth.get_auth_token'),
+                    headers={"Authorization": 'Basic ' + \
+                            base64.b64encode("testing:testing")},
+                    content_type='application/json')
+            self.assert200(response)
+            token = response.json.get('token')
+
+    def test_user_fails_generate_token(self):
 
         with self.client:
             response = self.client.post(

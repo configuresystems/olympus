@@ -1,4 +1,6 @@
 from app import db
+from datetime import datetime, date
+
 
 class CRUDMixin(object):
     __table_args__ = {'extend_existing': True}
@@ -6,18 +8,17 @@ class CRUDMixin(object):
     id = db.Column(db.Integer, primary_key=True)
 
     @classmethod
-    def get_by_id(cls, id):
-        if any(
-            (isinstance(id, basestring) and id.isdigit(),
-             isinstance(id, (int, float))),
-        ):
-            return cls.query.get(int(id))
-        return None
-
-    @classmethod
     def create(cls, **kwargs):
         instance = cls(**kwargs)
         return instance.save()
+
+    @classmethod
+    def get(cls, id):
+        return cls.query.get(id)
+
+    @classmethod
+    def get_or_404(cls, id):
+        return cls.query.get_or_404(id)
 
     def update(self, commit=True, **kwargs):
         for attr, value in kwargs.iteritems():
@@ -34,14 +35,34 @@ class CRUDMixin(object):
         db.session.delete(self)
         return commit and db.session.commit()
 
-def query_to_list(query, include_field_names=True):
-    column_names = []
-    for i, obj in enumerate(query.all()):
-        if i == 0:
-            column_names = [c.name for c in obj.__table__.columns]
-            if include_field_names:
-                yield column_names
-            yield obj_to_list(obj, column_names)
 
-def obj_to_list(sa_obj, field_order):
-    return [getattr(sa_obj, field_name, None) for field_name in field_order]
+class Serializer(object):
+    __public__ = None
+
+    def get_public(self, exclude=(), extra=()):
+        "Returns model's PUBLIC data for jsonify"
+        data = {}
+        keys = self._sa_instance_state.attrs.items()
+        public = self.__public__ + extra if self.__public__ else extra
+        for k, field in  keys:
+            if public and k not in public: continue
+            if k in exclude: continue
+            value = self._serialize(field.value)
+            if value:
+                data[k] = value
+        return data
+
+    @classmethod
+    def _serialize(cls, value, follow_fk=False):
+        if type(value) in (datetime, date):
+            ret = value.isoformate()
+        elif hasattr(value, '__iter__'):
+            ret = []
+            for v in value:
+                ret.append(cls._serialize(v))
+        elif Serializer in value.__class__.__bases__:
+            ret = value.get_public()
+        else:
+            ret = value
+        return ret
+

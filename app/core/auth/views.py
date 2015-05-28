@@ -32,7 +32,7 @@ def new_user():
 @module.route('/<int:id>')
 @auth.login_required
 def get_user(id):
-    user = User.get_by_id(id)
+    user = User.get(id)
     if not user:
         abort(400)
     return jsonify({'username': user.username})
