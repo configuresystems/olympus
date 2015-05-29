@@ -1,6 +1,7 @@
 from app import app, auth
-from app.core.auth.models import User
+from app.core.auth.models import User, Role
 from flask import Blueprint, g, jsonify, abort, url_for, request
+import datetime
 
 module = Blueprint('auth', __name__)
 
@@ -14,19 +15,20 @@ def verify_password(username_or_token, password):
     g.user = user
     return True
 
-@module.route('/', methods=['POST'])
+@module.route('/create', methods=['POST'])
 def new_user():
-    username = request.json.get('username')
-    password = request.json.get('password')
-    if username is None or password is None:
+    required = ['username', 'password']
+    req = request.json
+    if req['username'] is None or req['password'] is None:
         abort(400)
-    if User.query.filter_by(username=username).first() is not None:
+    if User.query.filter_by(username=req['username']).first() is not None:
         abort(400)
-    user = User(username=username)
-    user.hash_password(password)
+    req['created_on'] = datetime.datetime.utcnow()
+    user = User(username=req['username'])
+    user.hash_password(req['password'])
     user.save()
     g.user = user
-    return (jsonify({'username': user.username}), 201,
+    return (jsonify(username = user.username), 201,
             {'Location': url_for('auth.get_user', id=user.id, _external=True)})
 
 @module.route('/<int:id>')
@@ -35,7 +37,19 @@ def get_user(id):
     user = User.get(id)
     if not user:
         abort(400)
-    return jsonify({'username': user.username})
+    return jsonify(user = user.get_public())
+
+@module.route('/', methods=['GET'])
+@module.route('/list', methods=['GET'])
+@auth.login_required
+def get_users():
+    user_list = []
+    users = User.query.all()
+    for user in users:
+        user_list.append(user.get_public())
+    if not user:
+        abort(400)
+    return jsonify(users = user_list)
 
 @module.route('/token')
 @auth.login_required

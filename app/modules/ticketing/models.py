@@ -1,18 +1,19 @@
 from app import app, db
-from app.core.database.mixins import CRUDMixin, Serializer
+from app.core.database.mixins import CRUDMixin, ASerializer
 from sqlalchemy.inspection import inspect
 
 
-class Ticket(CRUDMixin, Serializer, db.Model):
+class Ticket(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'tickets'
-    __public__ = ('id', 'title', 'department', 'account', 'responses')
+    __public__ = ('id', 'title', 'department', 'account', 'responses',
+                  'created_on')
 
     title = db.Column(db.String(140), index=True)
     department = db.Column(db.String(64), index=True)
     account = db.Column(db.String(64), index=True)
     created_on = db.Column(db.DateTime)
     responses = db.relationship(
-            'TicketResponses',
+            'TicketResponse',
             backref='responses',
             lazy='dynamic'
             )
@@ -20,14 +21,11 @@ class Ticket(CRUDMixin, Serializer, db.Model):
     def __repr__(self):
         return '<Ticket %r' % (self.title)
 
-    def serialize(self):
-        d = Serializer.serialize(self)
-        return d
 
-
-class TicketResponses(CRUDMixin, Serializer, db.Model):
+class TicketResponse(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'ticketresponses'
-    __public__ = ('id', 'created_by', 'parent_id', 'public', 'private', 'status')
+    __public__ = ('id', 'created_by', 'parent_id', 'created_on',
+                  'public', 'private', 'status')
 
     created_on = db.Column(db.DateTime)
     created_by = db.Column(db.String(24), db.ForeignKey('users.username'))
@@ -38,8 +36,4 @@ class TicketResponses(CRUDMixin, Serializer, db.Model):
 
     def __repr__(self):
         return '<Ticket Resp %r' % (self.id)
-
-    def serialize(self):
-        d = Serializer.serialize(self)
-        return d
 

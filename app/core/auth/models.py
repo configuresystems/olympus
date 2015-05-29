@@ -3,14 +3,20 @@ from flask.ext.httpauth import HTTPBasicAuth
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
 from passlib.apps import custom_app_context as pwd_context
-from app.core.database.mixins import CRUDMixin
+from app.core.database.mixins import CRUDMixin, ASerializer
 
 
-class User(CRUDMixin, db.Model):
+class User(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'users'
+    __public__ = ('username', 'id', 'created_on', 'role',
+                  'email', 'active')
 
     username = db.Column(db.String(32), index=True)
     password_hash = db.Column(db.String(64))
+    created_on = db.Column(db.DateTime)
+    role = db.Column(db.String(16), db.ForeignKey('roles.name'))
+    email = db.Column(db.String(64))
+    active = db.Column(db.Boolean)
 
     def hash_password(self, password):
         self.password_hash = pwd_context.encrypt(password)
@@ -32,6 +38,28 @@ class User(CRUDMixin, db.Model):
             return None
         except BadSignature:
             return None
-        user = self.get_by_id(data['id'])
+        user = User.query.get(data['id'])
         return user
+
+    def serialize(self):
+        d = ASerializer.serialize(self)
+        return d
+
+    def __repr__(self):
+        return '<User %r' % (self.username)
+
+
+class Role(CRUDMixin, ASerializer, db.Model):
+    __tablename__ = 'roles'
+    __public__ = ('id', 'name', 'users')
+
+    name = db.Column(db.String(16))
+    users = db.relationship(
+            'User',
+            backref='users',
+            lazy='dynamic'
+            )
+
+    def __repr__(self):
+        return '<Role %r' % (self.name)
 
