@@ -19,13 +19,15 @@ def verify_password(username_or_token, password):
 def new_user():
     required = ['username', 'password']
     req = request.json
-    if req['username'] is None or req['password'] is None:
+    password = req['password']
+    del req['password']
+    if req['username'] is None or password is None:
         abort(400)
     if User.query.filter_by(username=req['username']).first() is not None:
         abort(400)
     req['created_on'] = datetime.datetime.utcnow()
-    user = User(username=req['username'])
-    user.hash_password(req['password'])
+    user = User(**req)
+    user.hash_password(password)
     user.save()
     g.user = user
     return (jsonify(username = user.username), 201,

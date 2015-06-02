@@ -9,13 +9,17 @@ from app.core.database.mixins import CRUDMixin, ASerializer
 class User(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'users'
     __public__ = ('username', 'id', 'created_on', 'role',
-                  'email', 'active')
+                  'email', 'active', 'first_name', 'last_name',
+                  'phone')
 
     username = db.Column(db.String(32), index=True)
+    first_name = db.Column(db.String(48))
+    last_name = db.Column(db.String(48))
     password_hash = db.Column(db.String(64))
     created_on = db.Column(db.DateTime)
     role = db.Column(db.String(16), db.ForeignKey('roles.name'))
     email = db.Column(db.String(64))
+    email = db.Column(db.String(20))
     active = db.Column(db.Boolean)
 
     def hash_password(self, password):
