@@ -23,6 +23,8 @@ def make_public_ticket(ticket):
 @module.route('/create', methods=['POST'])
 @auth.login_required
 def new_ticket():
+    if g.user.role not in ['admin','member']:
+        abort(401)
     req = request.json
     created_on = req['created_on'] = datetime.datetime.utcnow()
     response = req['responses']
@@ -32,8 +34,8 @@ def new_ticket():
     if Ticket.query.filter_by(title=req['title']).first() is not None:
         abort(400)
     ticket = Ticket.create(**req)
-    response['parent_id'] = ticket.id
-    response['created_by'] = g.user.id
+    response['ticket_id'] = ticket.id
+    response['user_id'] = g.user.id
     response['created_on'] = created_on
     ticket_response = TicketResponse.create(**response)
     ticket = Ticket.get(ticket.id)
@@ -43,10 +45,12 @@ def new_ticket():
 @module.route('/<int:id>', methods=['PUT', 'POST'])
 @auth.login_required
 def update_ticket(id):
+    if g.user.role not in ['admin','member']:
+        abort(401)
     req = request.json
     req['created_on'] = datetime.datetime.utcnow()
-    req['parent_id'] = id
-    req['created_by'] = g.user.id
+    req['ticket_id'] = id
+    req['user_id'] = g.user.id
     ticket = TicketResponse.create(**req)
     return (jsonify(ticket.get_public()), 201,
             {'Location': url_for('ticketing.get_ticket', id=ticket.id, _external=True)})

@@ -6,9 +6,9 @@ import json
 import base64
 
 class TicketTestTemplates(BaseTestCase):
-    def create_ticket(self, username='test', password='unittest',
+    def create_ticket(self, username='admin', password='admin',
                       title='testing', department='ops', account='fubar',
-                      created_by='test', parent_id=1, public='open'):
+                      user_id=1, ticket_id=1, public='open'):
 
         response = self.client.post(
                 url_for('ticketing.new_ticket'),
@@ -18,17 +18,31 @@ class TicketTestTemplates(BaseTestCase):
                      'department': department,
                      'account': account,
                      'responses':{
-                          'created_by': created_by,
-                          'parent_id': parent_id,
+                          'user_id': user_id,
+                          'ticket_id': ticket_id,
                           'public': public
                           }
-
                      }),
                 content_type='application/json')
         return response
 
-    def get_ticket_by_id(self, id=1, username='test', password='unittest'):
-        self.assertStatus(response, 201)
+    def update_ticket(self, username='admin', password='admin',
+                      user_id=1, ticket_id=1, public='updated', id=1):
+
+        response = self.client.post(
+                url_for('ticketing.update_ticket', id=id),
+                headers={"Authorization": 'Basic ' + \
+                        base64.b64encode(username+":"+password)},
+                data=json.dumps({
+                      'user_id': user_id,
+                      'ticket_id': ticket_id,
+                      'public': public
+                      }
+                     ),
+                content_type='application/json')
+        return response
+
+    def get_ticket_by_id(self, id=1, username='admin', password='admin'):
         response = self.client.get(
                 url_for('ticketing.get_ticket', id=id),
                 headers={"Authorization": 'Basic ' + \
@@ -50,6 +64,8 @@ class TicketTests(TicketTestTemplates, AuthTestTemplates):
 
     def test_ticket_can_create(self):
 
+        self.create_admin()
+
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
@@ -57,14 +73,34 @@ class TicketTests(TicketTestTemplates, AuthTestTemplates):
 
             response = self.create_ticket()
             self.assertStatus(response, 201)
+
+    def test_ticket_can_update(self):
+
+        self.create_admin()
+
+        with self.client:
+            response = self.create_user()
+            self.assertEqual('test', response.json.get('username'))
+            self.assertStatus(response, 201)
+
+            response = self.create_ticket()
+            self.assertStatus(response, 201)
+            response = self.update_ticket()
+            self.assertStatus(response, 201)
+            response = self.get_ticket_by_id(id=response.json.get('ticket_id'))
+            self.assertStatus(response, 200)
+            self.assertEqual(2, len(response.json['ticket']['responses']))
 
     def test_ticket_can_select(self):
 
+        self.create_admin()
+
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
             self.assertStatus(response, 201)
             response = self.create_ticket()
             self.assertStatus(response, 201)
+            response = self.get_ticket_by_id(id=response.json.get('id'))
 
 

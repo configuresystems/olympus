@@ -14,7 +14,7 @@ class Ticket(CRUDMixin, ASerializer, db.Model):
     created_on = db.Column(db.DateTime)
     responses = db.relationship(
             'TicketResponse',
-            backref='responses',
+            backref='ticket',
             lazy='dynamic'
             )
 
@@ -24,12 +24,12 @@ class Ticket(CRUDMixin, ASerializer, db.Model):
 
 class TicketResponse(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'ticketresponses'
-    __public__ = ('id', 'created_by', 'parent_id', 'created_on',
+    __public__ = ('id', 'user_id', 'ticket_id', 'created_on',
                   'public', 'private', 'status')
 
     created_on = db.Column(db.DateTime)
-    created_by = db.Column(db.String(24), db.ForeignKey('users.username'))
-    parent_id = db.Column(db.Integer, db.ForeignKey('tickets.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'))
     public = db.Column(db.String(2048))
     private = db.Column(db.String(2048))
     status = db.Column(db.String(16))

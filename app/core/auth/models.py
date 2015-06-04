@@ -5,7 +5,6 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 from passlib.apps import custom_app_context as pwd_context
 from app.core.database.mixins import CRUDMixin, ASerializer
 
-
 class User(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'users'
     __public__ = ('username', 'id', 'created_on', 'role',
@@ -19,7 +18,7 @@ class User(CRUDMixin, ASerializer, db.Model):
     created_on = db.Column(db.DateTime)
     role = db.Column(db.String(16), db.ForeignKey('roles.name'))
     email = db.Column(db.String(64))
-    email = db.Column(db.String(20))
+    phone = db.Column(db.String(20))
     active = db.Column(db.Boolean)
 
     def hash_password(self, password):
@@ -51,6 +50,7 @@ class User(CRUDMixin, ASerializer, db.Model):
 
     def __repr__(self):
         return '<User %r' % (self.username)
+
 
 
 class Role(CRUDMixin, ASerializer, db.Model):

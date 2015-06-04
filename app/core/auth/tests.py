@@ -6,11 +6,16 @@ import base64
 
 
 class AuthTestTemplates(BaseTestCase):
+
     def create_user(self, username='test', password='unittest', role='admin',
                     email='test@configure.systems', active=1,
-                    first_name='first', last_name='last'):
+                    first_name='first', last_name='last',
+                    login_username='admin', login_password='admin'):
+
         response = self.client.post(
                 url_for('auth.new_user'),
+                headers={"Authorization": 'Basic ' + \
+                        base64.b64encode(login_username+":"+login_password)},
                 data=json.dumps(
                     {"username": username,
                      "password": password,
@@ -22,7 +27,17 @@ class AuthTestTemplates(BaseTestCase):
                      }), content_type='application/json')
         return response
 
-    def create_token(self, username='test', password='unittest'):
+    def create_admin(self):
+        admin = {'username':'admin','role':'admin','last_name':'admin',
+                 'first_name':'admin','last_name':'admin',
+                 'email':'admin@configure.systems'}
+        user = User(**admin)
+        user.hash_password('admin')
+        user.save()
+        user = User.get(1)
+        self.assertEqual('admin', user.username)
+
+    def create_token(self, username='admin', password='admin'):
         response = self.client.get(
                 url_for('auth.get_auth_token'),
                 headers={"Authorization": 'Basic ' + \
@@ -30,7 +45,7 @@ class AuthTestTemplates(BaseTestCase):
                 content_type='application/json')
         return response
 
-    def get_token(self, username='test', password='unittest'):
+    def get_token(self, username='admin', password='admin'):
         response = self.client.get(
                 url_for('auth.get_auth_token'),
                 headers={"Authorization": 'Basic ' + \
@@ -39,13 +54,14 @@ class AuthTestTemplates(BaseTestCase):
         token = response.json.get('token')
         return token
 
-    def make_request(self, username_or_token, password=None):
+    def make_request(self, username_or_token, url='auth.get_user',
+                     password=None):
         if not password:
             auth = username_or_token + ":x"
         else:
             auth = username_or_token + ":" + password
         response = self.client.get(
-                url_for('auth.get_user', id=1),
+                url_for(url, id=2),
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(auth)},
                 content_type='application/json')
@@ -64,12 +80,16 @@ class AuthTests(AuthTestTemplates):
 
     def test_user_can_create(self):
 
+        self.create_admin()
+
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
             self.assertStatus(response, 201)
 
     def test_user_can_generate_token(self):
+
+        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -79,6 +99,8 @@ class AuthTests(AuthTestTemplates):
             self.assert200(response)
 
     def test_user_fails_generate_token(self):
+
+        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -90,6 +112,8 @@ class AuthTests(AuthTestTemplates):
 
     def test_user_can_access_user_with_user_pass(self):
 
+        self.create_admin()
+
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
@@ -99,6 +123,8 @@ class AuthTests(AuthTestTemplates):
             self.assertEqual('test', response.json['user']['username'])
 
     def test_user_can_access_user_with_token(self):
+
+        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -110,3 +136,39 @@ class AuthTests(AuthTestTemplates):
 
             self.assert200(response)
             self.assertEqual('test', response.json['user']['username'])
+
+    def test_user_limited_access_user_with_token_and_role(self):
+
+        self.create_admin()
+
+        with self.client:
+            response = self.create_user()
+            self.assertEqual('test', response.json.get('username'))
+            response = self.create_user(username='fooman', role='limited')
+            self.assertEqual('fooman', response.json.get('username'))
+
+            response = self.create_token(username='fooman',
+                    password='unittest')
+            token = response.json.get('token')
+            response = self.make_request(username_or_token=token)
+
+            self.assertStatus(response, 200)
+
+    def test_user_limited_access_users_with_token_and_role(self):
+
+        self.create_admin()
+
+        with self.client:
+            response = self.create_user()
+            self.assertEqual('test', response.json.get('username'))
+            response = self.create_user(username='fooman', role='limited')
+            self.assertEqual('fooman', response.json.get('username'))
+
+            response = self.create_token(username='fooman',
+                    password='unittest')
+            token = response.json.get('token')
+            response = self.make_request(username_or_token=token,
+                                         url='auth.get_users')
+            self.assertEqual(3, len(response.json.get('users')))
+
+            self.assertStatus(response, 200)

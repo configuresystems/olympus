@@ -16,15 +16,21 @@ def verify_password(username_or_token, password):
     return True
 
 @module.route('/create', methods=['POST'])
+@auth.login_required
 def new_user():
+    if g.user.role != 'admin':
+        abort(401)
+
     required = ['username', 'password']
     req = request.json
     password = req['password']
     del req['password']
+
     if req['username'] is None or password is None:
         abort(400)
     if User.query.filter_by(username=req['username']).first() is not None:
         abort(400)
+
     req['created_on'] = datetime.datetime.utcnow()
     user = User(**req)
     user.hash_password(password)
@@ -36,7 +42,13 @@ def new_user():
 @module.route('/<int:id>')
 @auth.login_required
 def get_user(id):
+    if g.user.role not in ['admin', 'member', 'limited']:
+        abort(401)
+
     user = User.get(id)
+    if g.user.role in ['limited']:
+        user.__public__ = ('username', 'created_on', 'active')
+
     if not user:
         abort(400)
     return jsonify(user = user.get_public())
@@ -45,9 +57,13 @@ def get_user(id):
 @module.route('/list', methods=['GET'])
 @auth.login_required
 def get_users():
-    user_list = []
+    if g.user.role not in ['admin', 'member', 'limited']:
+        abort(401)
     users = User.query.all()
+    user_list = []
     for user in users:
+        if g.user.role in ['limited']:
+            user.__public__ = ('username', 'created_on', 'active')
         user_list.append(user.get_public())
     if not user:
         abort(400)

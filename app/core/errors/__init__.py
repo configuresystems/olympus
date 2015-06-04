@@ -36,6 +36,15 @@ def authorized():
     resp.status_code = 401
     return resp
 
+@app.errorhandler(401)
+def invalid_role(e):
+    app.logger.warning('Invalid permissions')
+    return jsonify({
+            'return_code': 401,
+            'message': 'Invalid permissions'
+            }), 401
+
+
 @app.errorhandler(500)
 def internal_server_error(e):
     app.logger.warning(
