@@ -7,6 +7,7 @@ class Ticket(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'tickets'
     __public__ = ('id', 'title', 'department', 'account', 'responses',
                   'created_on')
+    __required__ = ['title', 'department']
 
     title = db.Column(db.String(140), index=True)
     department = db.Column(db.String(64), index=True)

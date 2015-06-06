@@ -1,3 +1,4 @@
+from app import db
 from app.testing import BaseTestCase
 from app.core.auth.tests import AuthTestTemplates
 from .models import Ticket, TicketResponse
@@ -44,7 +45,7 @@ class TicketTestTemplates(BaseTestCase):
 
     def get_ticket_by_id(self, id=1, username='admin', password='admin'):
         response = self.client.get(
-                url_for('ticketing.get_ticket', id=id),
+                url_for('ticketing.get', id=id),
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(username+":"+password)},
                 content_type='application/json')
@@ -52,6 +53,10 @@ class TicketTestTemplates(BaseTestCase):
 
 
 class TicketTests(TicketTestTemplates, AuthTestTemplates):
+
+    def setUp(self):
+        db.create_all()
+        self.create_admin()
 
     def test_db_can_create(self):
         ticket = Ticket.create(
@@ -64,8 +69,6 @@ class TicketTests(TicketTestTemplates, AuthTestTemplates):
 
     def test_ticket_can_create(self):
 
-        self.create_admin()
-
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
@@ -75,8 +78,6 @@ class TicketTests(TicketTestTemplates, AuthTestTemplates):
             self.assertStatus(response, 201)
 
     def test_ticket_can_update(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -92,8 +93,6 @@ class TicketTests(TicketTestTemplates, AuthTestTemplates):
             self.assertEqual(2, len(response.json['ticket']['responses']))
 
     def test_ticket_can_select(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()

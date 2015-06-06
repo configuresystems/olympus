@@ -5,3 +5,4 @@ from flask import Blueprint
 from app.core import errors
 from app.core.auth.views import module as auth
 from app.modules.ticketing.views import module as ticketing
+from app.modules.monitor.views import module as monitor
