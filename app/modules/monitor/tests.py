@@ -15,6 +15,7 @@ class MonitorTests(MonitorTestTemplates, AuthTestTemplates):
 
     def setUp(self):
         db.create_all()
+        self.create_admin()
         device = Device.create(
                 name='ping',
                 created=datetime.datetime.utcnow()
@@ -65,16 +66,12 @@ class MonitorTests(MonitorTestTemplates, AuthTestTemplates):
 
 
     def test_monitor_get(self):
-        response = self.client.get(
-                url_for('monitoring.get', id=1),
-                content_type='application/json'
-                )
+        response = self.make_request(username_or_token='admin',
+                password='admin', url='monitoring.get', id=1)
         print response.data
 
     def test_monitor_get_list(self):
-        response = self.client.get(
-                url_for('monitoring.get_list'),
-                content_type='application/json'
-                )
+        response = self.make_request(username_or_token='admin',
+                password='admin', url='monitoring.get_list')
         print response.data
 

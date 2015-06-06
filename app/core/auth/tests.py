@@ -1,4 +1,5 @@
 from app.testing import BaseTestCase
+from app import db
 from .models import User
 from flask import url_for
 import json
@@ -13,7 +14,7 @@ class AuthTestTemplates(BaseTestCase):
                     login_username='admin', login_password='admin'):
 
         response = self.client.post(
-                url_for('auth.new_user'),
+                url_for('auth.new'),
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(login_username+":"+login_password)},
                 data=json.dumps(
@@ -54,14 +55,18 @@ class AuthTestTemplates(BaseTestCase):
         token = response.json.get('token')
         return token
 
-    def make_request(self, username_or_token, url='auth.get_user',
-                     password=None):
+    def make_request(self, username_or_token, url='auth.get',
+                     password=None, id=2):
+        if id:
+            url = url_for(url, id=id)
+        else:
+            url = url_for(url)
         if not password:
             auth = username_or_token + ":x"
         else:
             auth = username_or_token + ":" + password
         response = self.client.get(
-                url_for(url, id=2),
+                url,
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(auth)},
                 content_type='application/json')
@@ -70,17 +75,19 @@ class AuthTestTemplates(BaseTestCase):
 
 class AuthTests(AuthTestTemplates):
 
+    def setUp(self):
+        db.create_all()
+        self.create_admin()
+
     def test_db_can_create(self):
 
-        user = User(username='test')
+        user = User(username='test', role='limited')
         user.hash_password('unittest')
         user.save()
-        user = User.get(1)
+        user = User.get(2)
         self.assertEqual('test', user.username)
 
     def test_user_can_create(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -88,8 +95,6 @@ class AuthTests(AuthTestTemplates):
             self.assertStatus(response, 201)
 
     def test_user_can_generate_token(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -99,8 +104,6 @@ class AuthTests(AuthTestTemplates):
             self.assert200(response)
 
     def test_user_fails_generate_token(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -112,8 +115,6 @@ class AuthTests(AuthTestTemplates):
 
     def test_user_can_access_user_with_user_pass(self):
 
-        self.create_admin()
-
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
@@ -123,8 +124,6 @@ class AuthTests(AuthTestTemplates):
             self.assertEqual('test', response.json['user']['username'])
 
     def test_user_can_access_user_with_token(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -138,8 +137,6 @@ class AuthTests(AuthTestTemplates):
             self.assertEqual('test', response.json['user']['username'])
 
     def test_user_limited_access_user_with_token_and_role(self):
-
-        self.create_admin()
 
         with self.client:
             response = self.create_user()
@@ -156,8 +153,6 @@ class AuthTests(AuthTestTemplates):
 
     def test_user_limited_access_users_with_token_and_role(self):
 
-        self.create_admin()
-
         with self.client:
             response = self.create_user()
             self.assertEqual('test', response.json.get('username'))
@@ -168,7 +163,7 @@ class AuthTests(AuthTestTemplates):
                     password='unittest')
             token = response.json.get('token')
             response = self.make_request(username_or_token=token,
-                                         url='auth.get_users')
+                                         url='auth.get_list')
             self.assertEqual(3, len(response.json.get('users')))
 
             self.assertStatus(response, 200)

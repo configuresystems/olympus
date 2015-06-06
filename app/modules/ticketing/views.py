@@ -13,7 +13,7 @@ module = Blueprint('ticketing', __name__)
 
 @module.route('/create', methods=['POST'])
 @auth.login_required
-def new_ticket():
+def new():
     template.model = Ticket
     template.required_fields(request.json)
     template.check_unique({'title':request.json.get('title')})
@@ -38,7 +38,7 @@ def new_ticket():
 
 @module.route('/<int:id>', methods=['PUT', 'POST'])
 @auth.login_required
-def update_ticket(id):
+def update(id):
     if g.user.role not in ['admin','member']:
         abort(401)
     req = request.json

@@ -12,7 +12,7 @@ class TicketTestTemplates(BaseTestCase):
                       user_id=1, ticket_id=1, public='open'):
 
         response = self.client.post(
-                url_for('ticketing.new_ticket'),
+                url_for('ticketing.new'),
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(username+":"+password)},
                 data=json.dumps({'title': title,
@@ -31,7 +31,7 @@ class TicketTestTemplates(BaseTestCase):
                       user_id=1, ticket_id=1, public='updated', id=1):
 
         response = self.client.post(
-                url_for('ticketing.update_ticket', id=id),
+                url_for('ticketing.update', id=id),
                 headers={"Authorization": 'Basic ' + \
                         base64.b64encode(username+":"+password)},
                 data=json.dumps({

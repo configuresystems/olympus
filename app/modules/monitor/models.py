@@ -5,8 +5,11 @@ from sqlalchemy.inspection import inspect
 
 class Monitor(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'monitors'
-    __public__ = ('id', 'name', 'ip', 'alert', 'responses',
+    __public__ = ()
+    __admin__ = ('id', 'name', 'ip', 'alert', 'responses',
                   'created')
+    __member__ = __admin__
+    __limited__ = ('id', 'name', 'alert')
 
     name = db.Column(db.String(140), index=True)
     ip = db.Column(db.String(64), index=True)
@@ -61,7 +64,6 @@ class Device(CRUDMixin, ASerializer, db.Model):
             backref='device',
             lazy='dynamic'
             )
-
 
 class State(CRUDMixin, ASerializer, db.Model):
     __tablename__ = 'states'

@@ -13,12 +13,14 @@ module = Blueprint('monitoring', __name__)
 
 
 @module.route('/<int:id>', methods=['GET'])
+@auth.login_required
 def get(id):
     template.model = Monitor
     return template.get(id)
 
 @module.route('/', methods=['GET'])
 @module.route('/list', methods=['GET'])
+@auth.login_required
 def get_list():
     template.model = Monitor
     return template.get_list()
