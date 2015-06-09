@@ -40,15 +40,30 @@ def new():
     return (jsonify(username = user.username), 201,
             {'Location': url_for('auth.get', id=user.id, _external=True)})
 
+@module.route('/<int:id>', methods=['PUT','POST'])
+@auth.login_required
+def update(id):
+    user = User.get(id)
+    if g.user.role not in ['admin']:
+        if g.user.username != user.username:
+            abort(401)
+        for field in ['role','active']:
+            if request.json.get(field):
+                del request.json[field]
+    if request.json.get('username'):
+        del request.json['username']
+
+    user = User.get(id)
+    user.update(**request.json)
+
+    template.model = User
+    return template.get(id)
+
 @module.route('/<int:id>')
 @auth.login_required
 def get(id):
     template.access = ['admin', 'member', 'limited']
     template.check_privilege()
-
-#    user = User.get(id)
-#    if g.user.role in ['limited']:
-#        user.__public__ = ('username', 'created_on', 'active')
 
     template.model = User
     return template.get(id)
@@ -59,13 +74,6 @@ def get(id):
 def get_list():
     template.access = ['admin', 'member', 'limited']
     template.check_privilege()
-
-#    for user in users:
-#        if g.user.role in ['limited']:
-#            user.__public__ = ('username', 'created_on', 'active')
-#        user_list.append(user.get_public())
-#    if not user:
-#        abort(400)
 
     template.model = User
     return template.get_list()

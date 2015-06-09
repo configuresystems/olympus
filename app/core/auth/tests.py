@@ -28,6 +28,18 @@ class AuthTestTemplates(BaseTestCase):
                      }), content_type='application/json')
         return response
 
+    def update_user(self, id, login_username='admin', login_password='admin',
+                    **kwargs):
+
+        response = self.client.post(
+                url_for('auth.update', id=id),
+                headers={"Authorization": 'Basic ' + \
+                        base64.b64encode(login_username+":"+login_password)},
+                data=json.dumps(
+                     kwargs
+                     ), content_type='application/json')
+        return response
+
     def create_admin(self):
         admin = {'username':'admin','role':'admin','last_name':'admin',
                  'first_name':'admin','last_name':'admin',
@@ -167,3 +179,21 @@ class AuthTests(AuthTestTemplates):
             self.assertEqual(3, len(response.json.get('users')))
 
             self.assertStatus(response, 200)
+
+    def test_user_update(self):
+
+        with self.client:
+            response = self.create_user()
+            self.assertEqual('test', response.json.get('username'))
+            data = {'first_name':'updated_first','last_name':'updated_last',
+                    'role':'member'}
+            response = self.update_user(id=2, **data)
+            self.assertEqual('updated_first', response.json['user']['first_name'])
+            self.assertEqual('updated_last', response.json['user']['last_name'])
+            self.assertEqual('test', response.json['user']['username'])
+            data = {'first_name':'updated_again','last_name':'updated_again'}
+            response = self.update_user(id=2, login_username='test',
+                    login_password='unittest', **data)
+            self.assertEqual('updated_again', response.json['user']['first_name'])
+            self.assertEqual('updated_again', response.json['user']['last_name'])
+            self.assertEqual('test', response.json['user']['username'])
